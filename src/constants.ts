@@ -11,7 +11,7 @@ export const REMOTE_BASE_URL =
 export const DESCRIPTION_TRUNCATE_LENGTH = 60;
 
 /** Extension prefix used in all user-facing messages */
-export const EXT_PREFIX = 'AI Skills';
+export const EXT_PREFIX = 'Copilot Superpowers';
 
 /** Command identifiers */
 export const CMD_BROWSE = 'aiSkills.browse';

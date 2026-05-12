@@ -6,11 +6,13 @@ import { ERR_SKILL_NOT_FOUND, ERR_CONTENT_MISSING } from '../constants';
 import { RecentSkills } from '../recentSkills';
 import { SkillUpdateTracker } from '../skills/SkillUpdateTracker';
 import { maybePushToChat } from '../chat/openInChat';
+import { patchGitignoreOnFirstInstall } from '../gitignore/patchGitignore';
 
 export function registerInstallCommand(
   manager: SkillsManager,
   recentSkills: RecentSkills,
-  tracker?: SkillUpdateTracker
+  tracker?: SkillUpdateTracker,
+  context?: vscode.ExtensionContext
 ): vscode.Disposable {
   return vscode.commands.registerCommand('aiSkills.install', async (skillId?: string) => {
     let resolvedId = skillId;
@@ -67,6 +69,10 @@ export function registerInstallCommand(
 
     if (result.success) {
       recentSkills.add(resolvedId);
+      // Patch .gitignore on the first skill install in this workspace
+      if (context) {
+        await patchGitignoreOnFirstInstall(context);
+      }
       const action = await vscode.window.showInformationMessage(result.message, 'Open File');
       if (action === 'Open File' && result.destPath) {
         try {

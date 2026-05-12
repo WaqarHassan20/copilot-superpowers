@@ -1,9 +1,9 @@
-# AI Agent Superpowers
+# Copilot Superpowers
 
 > Browse, preview, and install **940+ AI agent skills** for GitHub Copilot, Cursor, Windsurf and AntiGravity.
 
-[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/aliabbaschadhar.agent-superpowers?label=Marketplace&color=0078d4)](https://marketplace.visualstudio.com/items?itemName=aliabbaschadhar.agent-superpowers)
-[![Installs](https://img.shields.io/visual-studio-marketplace/i/aliabbaschadhar.agent-superpowers)](https://marketplace.visualstudio.com/items?itemName=aliabbaschadhar.agent-superpowers)
+[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/aliabbaschadhar.copilot-superpowers?label=Marketplace&color=0078d4)](https://marketplace.visualstudio.com/items?itemName=aliabbaschadhar.copilot-superpowers)
+[![Installs](https://img.shields.io/visual-studio-marketplace/i/aliabbaschadhar.copilot-superpowers)](https://marketplace.visualstudio.com/items?itemName=aliabbaschadhar.copilot-superpowers)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
@@ -11,7 +11,7 @@
 ## Install
 
 1. Open VS Code Extensions (`Ctrl+Shift+X`)
-2. Search **"AI Agent Superpowers"** by aliabbaschadhar
+2. Search **"Copilot Superpowers"** by aliabbaschadhar
 3. Click **Install** — no config needed, works offline
 
 ---
@@ -79,7 +79,7 @@ After installing skills, add this to your editor in `.github/copilot-instruction
 ````markdown
 ## AI Agent Skills
 
-This project uses AI Agent Superpowers skills stored in `.agent/skills/`.
+This project uses Copilot Superpowers skills stored in `.agent/skills/`.
 
 ### How to use skills
 
@@ -323,7 +323,7 @@ This extension provides **7 Language Model Tools** that GitHub Copilot and other
 
 ## Contributing & Support
 
-- Bugs / features → [GitHub Issues](https://github.com/aliabbaschadhar/agent-superpowers/issues)
+- Bugs / features → [GitHub Issues](https://github.com/aliabbaschadhar/copilot-superpowers/issues)
 - Pull requests → see [CONTRIBUTING.md](CONTRIBUTING.md)
 - Security → see [SECURITY.md](SECURITY.md)
 - Changelog → [CHANGELOG.md](CHANGELOG.md)

@@ -100,7 +100,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             recommended,
             `${recommended.length} recommended skills`,
             manager,
-            tracker
+            tracker,
+            context
           );
           treeProvider.refreshAfterInstall();
         } else if (choice === 'Pick Skills') {
@@ -155,7 +156,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   context.subscriptions.push(
     treeView,
     registerBrowseCommand(manager, recentSkills, favoriteSkills),
-    registerInstallCommand(manager, recentSkills, tracker),
+    registerInstallCommand(manager, recentSkills, tracker, context),
     registerInstallFromTreeCommand(manager),
     registerPreviewCommand(manager),
     registerCopyIdCommand(),
@@ -218,7 +219,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const showWelcome = async (): Promise<void> => {
     context.globalState.update('aiSkills.welcomed', true);
     const action = await vscode.window.showInformationMessage(
-      `AI Agent Skills: ${manager.getAll().length} skills ready. Press Ctrl+Shift+/ to browse, or open the sidebar.`,
+      `Copilot Superpowers: ${manager.getAll().length} skills ready. Press Ctrl+Shift+/ to browse, or open the sidebar.`,
       'Browse Skills',
       'Dismiss'
     );

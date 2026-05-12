@@ -15,6 +15,7 @@ import { InstallOptions, InstallResult } from '../installers/types';
 import { ProjectLocalInstaller } from '../installers/projectLocalInstaller';
 import { SkillUpdateTracker } from '../skills/SkillUpdateTracker';
 import { maybePushToChat } from '../chat/openInChat';
+import { patchGitignoreOnFirstInstall } from '../gitignore/patchGitignore';
 
 // ─── Path helper ──────────────────────────────────────────────────────────────
 
@@ -115,7 +116,8 @@ export async function bulkInstall(
   skills: SkillEntry[],
   label: string,
   manager: SkillsManager,
-  tracker?: SkillUpdateTracker
+  tracker?: SkillUpdateTracker,
+  context?: vscode.ExtensionContext
 ): Promise<void> {
   if (skills.length === 0) {
     vscode.window.showInformationMessage('AI Skills: No skills to install.');
@@ -193,6 +195,10 @@ export async function bulkInstall(
   );
 
   reportResults(counts);
+  // Patch .gitignore on the first bulk install in this workspace
+  if (context && counts.installed > 0) {
+    await patchGitignoreOnFirstInstall(context);
+  }
   // Push successfully installed skills into chat, honouring the openChatOnInstall setting.
   await maybePushToChat(counts.installedIds);
 }

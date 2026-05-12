@@ -1,18 +1,18 @@
 {
-  "name": "agent-superpowers",
-  "displayName": "AI Agent Superpowers",
+  "name": "copilot-superpowers",
+  "displayName": "Copilot Superpowers",
   "description": "Browse, preview, and install 940+ AI agent skills for GitHub Copilot, Cursor, Windsurf and AntiGravity.",
-  "version": "1.0.0",
+  "version": "0.3.0-beta",
   "publisher": "aliabbaschadhar",
   "license": "MIT",
   "icon": "media/icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/aliabbaschadhar/agent-superpowers"
+    "url": "https://github.com/aliabbaschadhar/copilot-superpowers"
   },
-  "homepage": "https://github.com/aliabbaschadhar/agent-superpowers#readme",
+  "homepage": "https://github.com/aliabbaschadhar/copilot-superpowers#readme",
   "bugs": {
-    "url": "https://github.com/aliabbaschadhar/agent-superpowers/issues"
+    "url": "https://github.com/aliabbaschadhar/copilot-superpowers/issues"
   },
   "keywords": [
     "cursor",
@@ -684,7 +684,7 @@
       }
     ],
     "configuration": {
-      "title": "AI Agent Skills",
+      "title": "Copilot Superpowers",
       "properties": {
         "aiSkills.openChatOnInstall": {
           "type": "string",

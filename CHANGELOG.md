@@ -1,8 +1,17 @@
 # Changelog
 
-All notable changes to the **AI Agent Superpowers** extension are documented here.
+All notable changes to the **Copilot Superpowers** extension are documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
+
+---
+
+## [Unreleased] — Project rename
+
+### Changed
+
+- Extension renamed from **AI Agent Superpowers** (`agent-superpowers`) to **Copilot Superpowers** (`copilot-superpowers`).
+- Auto-patches the workspace `.gitignore` with `.agent/skills/` and `.agent/skills-catalog.md` the first time a skill is installed — keeping installed skills local and untracked.
 
 ---
 
@@ -124,7 +133,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 When a new version is released, VS Code will prompt you to update. Or manually:
 
 1. Open **Extensions** (`Ctrl+Shift+X`)
-2. Find **AI Agent Superpowers**
+2. Find **Copilot Superpowers**
 3. Click **Update**
 4. Reload VS Code
 
@@ -132,6 +141,6 @@ When a new version is released, VS Code will prompt you to update. Or manually:
 
 ## Support
 
-- 🐛 **Found a bug?** [Report it](https://github.com/aliabbaschadhar/agent-superpowers/issues)
-- 💡 **Have a feature idea?** [Open a discussion](https://github.com/aliabbaschadhar/agent-superpowers/discussions)
+- 🐛 **Found a bug?** [Report it](https://github.com/aliabbaschadhar/copilot-superpowers/issues)
+- 💡 **Have a feature idea?** [Open a discussion](https://github.com/aliabbaschadhar/copilot-superpowers/discussions)
 - 📖 **Need help?** Check [README.md](README.md)
