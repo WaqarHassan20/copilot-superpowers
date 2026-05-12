@@ -6,6 +6,17 @@ Running log of decisions, discoveries, and session context for the **AI Agent Su
 
 ## Session Log
 
+### 2026-03-11 (README & documentation — editor-only focus)
+
+**Status:** Complete.
+
+**What was changed:**
+
+- **`README.md`** — Fixed "Winsurf" → "Windsurf" typo in tagline. Removed stale `aiSkills.autoPasteDelayMs` row from the Configuration table (setting no longer exists in `package.json`). Clarified Quick Start text to say "editor's AI chat" (not "AI chat") to make the editor-only scope explicit.
+- **`package.json`** — Fixed `description` field: corrected casing ("Windsurf", "AntiGravity"), removed "zed" (no installer exists for it), consistent with README.
+
+---
+
 ### 2026-03-10 (Copilot LM Tool — aiSkills_requestSkill)
 
 **Status:** Implemented. Copilot can now install and load skills on-demand during response generation.
@@ -120,14 +131,13 @@ Running log of decisions, discoveries, and session context for the **AI Agent Su
 ## Key Decisions
 
 | Date       | Decision                                  | Rationale                                                                                                |
-| ---------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------- | --- | ----------------------------------------------------------- |
+| ---------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | 2026-03-10 | Copilot LM Tool (`aiSkills_requestSkill`) | On-demand skill injection during Copilot responses without requiring pre-installation                    |
-| 2026-03-10 | `engines.vscode` bumped to `^1.90.0`      | `vscode.lm.registerTool` is stable from 1.90; no proposed API flag needed                                |     | Zero-dependency offline experience; no CDN reliability risk |
+| 2026-03-10 | `engines.vscode` bumped to `^1.90.0`      | `vscode.lm.registerTool` is stable from 1.90; no proposed API flag needed                                |
+| 2026-03-08 | Project-local install (.agent/skills/)    | Skills scoped to workspace; avoids polluting global agent configs; aligns with repo-committed skill sets |
+| 2026-03-06 | Separate `RemoteSync` class               | Separation of concerns; sync can be swapped (e.g., GraphQL later)                                        |
 | 2026-03-05 | Fuse.js as sole runtime dep               | Fast, zero-config fuzzy search with no server round-trips                                                |
 | 2026-03-05 | `esbuild` + `Bun` build chain             | Fastest TS bundling; Bun for script execution parity                                                     |
-| 2026-03-06 | Separate `RemoteSync` class               | Separation of concerns; sync can be swapped (e.g., GraphQL later)                                        |
-| 2026-03-06 | Gemini CLI installer added                | Growing Gemini user base; feature parity with Claude                                                     |
-| 2026-03-08 | Project-local install (.agent/skills/)    | Skills scoped to workspace; avoids polluting global agent configs; aligns with repo-committed skill sets |
 
 ---
 
@@ -136,7 +146,7 @@ Running log of decisions, discoveries, and session context for the **AI Agent Su
 - **Current branch:** `dev`
 - **Next milestone:** v1.2.0
 - **Priority work items:** See `plan.md`
-- **Editor target:** VS Code ^1.85 — no proposed APIs used
+- **Editor target:** VS Code ^1.90.0 — no proposed APIs used
 
 ---
 

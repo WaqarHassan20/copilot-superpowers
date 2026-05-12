@@ -25,53 +25,49 @@ Released 2026-03-06. Stable. Published to VS Code Marketplace.
 ### P0 — Must Have
 
 - [ ] **Memoize `InstallationDetector`**  
-      _Problem:_ Full disk scan on every tree refresh causes lag on large setups.  
-      _Solution:_ Cache install state in a `Map<string, boolean>`; invalidate only when a command writes to or deletes from an install path (hook into installer `install()`/`uninstall()` methods).  
-      _Files:_ `src/skills/InstallationDetector.ts`, `src/commands/installSkill.ts`, `src/commands/uninstallSkill.ts`
+       _Problem:_ Full disk scan on every tree refresh causes lag on large setups.  
+       _Solution:_ Cache install state in a `Map<string, boolean>`; invalidate only when a command writes to or deletes from an install path (hook into installer `install()`/`uninstall()` methods).  
+       _Files:_ `src/skills/InstallationDetector.ts`, `src/commands/installSkill.ts`, `src/commands/uninstallSkill.ts`
 
-- [ ] **Add retry logic to `RemoteSync`**  
-      _Problem:_ Any transient network error silently aborts the sync with no retry.  
-      _Solution:_ Implement exponential back-off (3 retries, 1s / 2s / 4s), then give up silently.  
-      _Files:_ `src/skills/RemoteSync.ts`
+- [x] **Add retry logic to `RemoteSync`** (2026-03-09)
+      Implemented 3 retries with 1s/2s/4s exponential back-off; immediate null return on 4xx errors.
 
 - [ ] **Markdown syntax highlighting in preview webview**  
-      _Problem:_ Skill preview shows raw Markdown as plain text.  
-      _Solution:_ Render Markdown via `vscode.commands.executeCommand('markdown.api.render', ...)` or a lightweight Marked.js inside the webview.  
-      _Files:_ `src/commands/previewSkill.ts`
+       _Problem:_ Skill preview shows raw Markdown as plain text.  
+       _Solution:_ Render Markdown via `vscode.commands.executeCommand('markdown.api.render', ...)` or a lightweight Marked.js inside the webview.  
+       _Files:_ `src/commands/previewSkill.ts`
 
 ### P1 — Should Have
 
 - [ ] **Monorepo workspace scan**  
-      _Problem:_ `WorkspaceScanner` only reads the root `package.json`.  
-      _Solution:_ Walk all `package.json` files up to 2 levels deep with `glob`; merge detected technologies.  
-      _Files:_ `src/skills/WorkspaceScanner.ts`
+       _Problem:_ `WorkspaceScanner` only reads the root `package.json`.  
+       _Solution:_ Walk all `package.json` files up to 2 levels deep with `glob`; merge detected technologies.  
+       _Files:_ `src/skills/WorkspaceScanner.ts`
 
 - [ ] **Installer unit tests**  
-      _Problem:_ Zero test coverage for installer classes.  
-      _Solution:_ Add `test/installers/` with Jest-style mocha tests mocking `fs` operations.  
-      _Files:_ `test/installers/claudeInstaller.test.ts`, `geminiInstaller.test.ts`, etc.
+       _Problem:_ Zero test coverage for installer classes.  
+       _Solution:_ Add `test/installers/` with Jest-style mocha tests mocking `fs` operations.  
+       _Files:_ `test/installers/projectLocalInstaller.test.ts`
 
 - [ ] **Show skill `source` badge in tree**  
-      _Problem:_ Users can't distinguish bundled vs remote vs local skills.  
-      _Solution:_ Add a `description` property to `SkillNode` showing `[local]` or `[remote]` suffix.  
-      _Files:_ `src/tree/nodes.ts`, `src/tree/SkillsTreeProvider.ts`
+       _Problem:_ Users can't distinguish bundled vs remote vs local skills.  
+       _Solution:_ Add a `description` property to `SkillNode` showing `[local]` or `[remote]` suffix.  
+       _Files:_ `src/tree/nodes.ts`, `src/tree/SkillsTreeProvider.ts`
 
 ### P2 — Nice to Have
 
-- [ ] **Bulk uninstall by category**  
-      _Problem:_ Only per-skill uninstall exists.  
-      _Solution:_ Add `aiSkills.uninstallCategory` command mirroring `aiSkills.installCategory`.  
-      _Files:_ `src/commands/installBulk.ts` (extend), `package.json` contributes
+- [x] **Bulk uninstall by category** (2026-03-09)
+      `aiSkills.uninstallCategory` and `aiSkills.uninstallCollection` commands added.
 
 - [ ] **Skill update detection**  
-      _Problem:_ If a skill's remote content is updated, users don't know.  
-      _Solution:_ Store a content hash on install; compare with remote on `syncRemote()`, notify if outdated.  
-      _Files:_ `src/skills/RemoteSync.ts`, `src/skills/InstallationDetector.ts`
+       _Problem:_ If a skill's remote content is updated, users don't know.  
+       _Solution:_ Store a content hash on install; compare with remote on `syncRemote()`, notify if outdated.  
+       _Files:_ `src/skills/RemoteSync.ts`, `src/skills/InstallationDetector.ts`
 
 - [ ] **Open SKILL.md in editor after install**  
-      _Problem:_ After install the user has no quick way to inspect the installed file.  
-      _Solution:_ Offer "Open file" action in the post-install notification.  
-      _Files:_ `src/commands/installSkill.ts`
+       _Problem:_ After install the user has no quick way to inspect the installed file.  
+       _Solution:_ Offer "Open file" action in the post-install notification.  
+       _Files:_ `src/commands/installSkill.ts`
 
 ---
 
@@ -98,8 +94,8 @@ Released 2026-03-06. Stable. Published to VS Code Marketplace.
 ### Adding a New Installer
 
 1. Create `src/installers/<AgentName>Installer.ts` implementing the `Installer` interface from `src/installers/types.ts`.
-2. Add the enum value to `AgentTarget` in `src/installers/types.ts`.
-3. Wire it into `agentPicker.ts` so users can select it.
+2. Extend `BaseInstaller` and override `targetPath()` to resolve the install destination.
+3. Wire it into `installSkill.ts` and `installBulk.ts`.
 4. Add configuration key(s) to `package.json` if a custom path override is needed.
 5. Document in `README.md`.
 

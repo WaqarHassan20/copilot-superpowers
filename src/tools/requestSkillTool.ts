@@ -5,6 +5,8 @@ import { log } from '../logger';
 
 interface RequestSkillInput {
   skillId: string;
+  /** Response format. Default: markdown */
+  outputFormat?: 'markdown' | 'json';
 }
 
 /**
@@ -65,7 +67,7 @@ export class RequestSkillTool implements vscode.LanguageModelTool<RequestSkillIn
     options: vscode.LanguageModelToolInvocationOptions<RequestSkillInput>,
     _token: vscode.CancellationToken
   ): Promise<vscode.LanguageModelToolResult> {
-    const { skillId } = options.input;
+    const { skillId, outputFormat = 'markdown' } = options.input;
 
     // Security: always re-validate even if prepareInvocation passed.
     if (!isValidSkillId(skillId)) {
@@ -119,8 +121,16 @@ export class RequestSkillTool implements vscode.LanguageModelTool<RequestSkillIn
     }
 
     const combined = buildCombinedContent(skillId, skillFiles);
+    const response =
+      outputFormat === 'json'
+        ? JSON.stringify({
+            skillId,
+            files: [...skillFiles.entries()].map(([path, content]) => ({ path, content })),
+            combinedText: combined,
+          })
+        : combined;
 
-    return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(combined)]);
+    return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(response)]);
   }
 }
 

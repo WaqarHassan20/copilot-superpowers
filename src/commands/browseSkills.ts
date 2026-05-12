@@ -8,6 +8,7 @@ import { FavoriteSkills } from '../favoriteSkills';
 import { FuzzySearch } from '../skills/FuzzySearch';
 import { ProjectLocalInstaller } from '../installers/projectLocalInstaller';
 import { InstallOptions } from '../installers/types';
+import { openSkillsInChat } from '../chat/openInChat';
 
 /**
  * Parses special filter prefixes from browse query text.
@@ -131,7 +132,7 @@ async function handleSkillSelection(
   }
 
   await installSkillLocally(skill.id, content, skillFiles, workspaceRoot);
-  await openSkillInChat(skill.name, skill.id, content);
+  await openSkillsInChat([skill.id]);
 }
 
 async function installSkillLocally(
@@ -157,23 +158,7 @@ async function installSkillLocally(
   }
 }
 
-async function openSkillInChat(skillName: string, skillId: string, content: string): Promise<void> {
-  const fileRefs = `#file:.agent/skills/${skillId}`;
-  try {
-    await vscode.commands.executeCommand('workbench.action.chat.open', {
-      query: fileRefs,
-      isPartialQuery: true,
-    });
-    vscode.window.showInformationMessage(
-      `$(check) '${skillName}' installed — skill files added to chat context`
-    );
-  } catch {
-    await vscode.env.clipboard.writeText(fileRefs || content);
-    vscode.window.showInformationMessage(
-      `$(clippy) '${skillName}' installed — paste in chat to add as context (Ctrl+V)`
-    );
-  }
-}
+// Chat injection is handled by the shared openSkillsInChat utility (src/chat/openInChat.ts).
 
 export function registerBrowseCommand(
   manager: SkillsManager,
@@ -285,7 +270,8 @@ export function registerBrowseCommand(
     }
 
     const qp = vscode.window.createQuickPick();
-    qp.placeholder = 'Search skills to add into your project';
+    qp.placeholder = 'Search skills — select one or more, then press Enter';
+    qp.canSelectMany = true;
     qp.matchOnDetail = false;
     qp.matchOnDescription = false;
     qp.items = buildItems('');
@@ -336,21 +322,37 @@ export function registerBrowseCommand(
 
     await new Promise<void>((resolve) => {
       qp.onDidAccept(async () => {
-        const picked = qp.selectedItems[0];
+        // In canSelectMany mode, activeItems holds the item that was just
+        // confirmed with Enter. If the user checked several items via Space and
+        // then pressed Enter, selectedItems contains all checked entries.
+        // Fall back to activeItems[0] so a plain Enter still works.
+        const picked =
+          qp.selectedItems.length > 0
+            ? [...qp.selectedItems]
+            : qp.activeItems.length > 0
+              ? [qp.activeItems[0]]
+              : [];
+
         qp.hide();
         resolve();
 
-        if (!picked || picked.kind === vscode.QuickPickItemKind.Separator) {
+        const validPicked = picked.filter(
+          (item) => item.kind !== vscode.QuickPickItemKind.Separator
+        );
+
+        if (validPicked.length === 0) {
           return;
         }
 
-        // Strip all codicons and the leading "/" to extract the bare skill ID.
-        // Labels look like: "$(symbol-event) /skill-id $(shield)"
-        const skillId = picked.label
-          .replace(/\$\([^)]+\)\s*/g, '') // remove every $(icon) and trailing whitespace
-          .replace(/^\//, '') // remove leading slash
-          .trim();
-        await handleSkillSelection(skillId, manager, recentSkills);
+        for (const item of validPicked) {
+          // Strip all codicons and the leading "/" to extract the bare skill ID.
+          // Labels look like: "$(symbol-event) /skill-id $(shield)"
+          const skillId = item.label
+            .replace(/\$\([^)]+\)\s*/g, '') // remove every $(icon) and trailing whitespace
+            .replace(/^\//, '') // remove leading slash
+            .trim();
+          await handleSkillSelection(skillId, manager, recentSkills);
+        }
       });
 
       qp.onDidHide(() => resolve());

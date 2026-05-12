@@ -5,6 +5,7 @@ import { InstallOptions, InstallResult } from '../installers/types';
 import { ERR_SKILL_NOT_FOUND, ERR_CONTENT_MISSING } from '../constants';
 import { RecentSkills } from '../recentSkills';
 import { SkillUpdateTracker } from '../skills/SkillUpdateTracker';
+import { maybePushToChat } from '../chat/openInChat';
 
 export function registerInstallCommand(
   manager: SkillsManager,
@@ -74,6 +75,8 @@ export function registerInstallCommand(
           // File may not be readable in all editors
         }
       }
+      // Auto-inject skill context into chat, honouring the openChatOnInstall setting.
+      await maybePushToChat([resolvedId]);
     } else {
       vscode.window.showErrorMessage(`AI Skills: ${result.message}`);
     }

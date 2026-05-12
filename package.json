@@ -1,7 +1,7 @@
 {
   "name": "agent-superpowers",
   "displayName": "AI Agent Superpowers",
-  "description": "Browse, preview, and install 940+ AI agent skills for github copilot, cursor, antigravity, winsurf, zed.",
+  "description": "Browse, preview, and install 940+ AI agent skills for GitHub Copilot, Cursor, Windsurf and AntiGravity.",
   "version": "1.0.0",
   "publisher": "aliabbaschadhar",
   "license": "MIT",
@@ -431,11 +431,34 @@
         "mac": "cmd+shift+/"
       }
     ],
+    "chatParticipants": [
+      {
+        "id": "aiSkills.participant",
+        "name": "aiSkills",
+        "fullName": "AI Agent Skills",
+        "description": "Activate any skill by name — type @aiSkills /plan-writing or @aiSkills react-patterns",
+        "isSticky": false,
+        "commands": [
+          {
+            "name": "skill",
+            "description": "Load a skill by ID and inject its guidance into the conversation"
+          },
+          {
+            "name": "list",
+            "description": "List all skills installed in this workspace"
+          },
+          {
+            "name": "search",
+            "description": "Search the skill catalog by keyword"
+          }
+        ]
+      }
+    ],
     "languageModelTools": [
       {
         "name": "aiSkills_requestSkill",
         "displayName": "AI Skills: Request Skill",
-        "modelDescription": "Installs and retrieves an AI agent skill from the catalog by its kebab-case ID. Call this tool when you need domain-specific knowledge that a skill provides (e.g. react-patterns for React, api-design-principles for REST APIs, ai-agents-architect for agent design). Pass the exact skill ID. Returns the full SKILL.md content to use in your response. Do NOT call this for skills already in context.",
+        "modelDescription": "Installs and retrieves an AI agent skill from the catalog by its kebab-case ID. Call this tool when you need domain-specific knowledge that a skill provides (e.g. react-patterns for React, api-design-principles for REST APIs, ai-agents-architect for agent design). Pass the exact skill ID. Returns full skill content. Use outputFormat=json for machine-readable output.",
         "canBeReferencedInPrompt": true,
         "toolReferenceName": "requestSkill",
         "inputSchema": {
@@ -444,10 +467,218 @@
             "skillId": {
               "type": "string",
               "description": "The kebab-case skill ID from the catalog, e.g. \"react-patterns\" or \"api-design-principles\"."
+            },
+            "outputFormat": {
+              "type": "string",
+              "enum": [
+                "markdown",
+                "json"
+              ],
+              "description": "Response format. Default: markdown"
             }
           },
           "required": [
             "skillId"
+          ]
+        }
+      },
+      {
+        "name": "aiSkills_listInstalled",
+        "displayName": "AI Skills: List Installed Skills",
+        "modelDescription": "Lists all installed AI agent skills with their metadata. Use this to discover what skills are already available in the current workspace. Optionally filter by category or limit results. Use outputFormat=json for machine-readable output.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "listInstalled",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "category": {
+              "type": "string",
+              "description": "Optional category filter (e.g. \"react-patterns\", \"api-design\"). Returns only skills in this category."
+            },
+            "limit": {
+              "type": "number",
+              "description": "Maximum number of skills to return. Default: 100"
+            },
+            "outputFormat": {
+              "type": "string",
+              "enum": [
+                "markdown",
+                "json"
+              ],
+              "description": "Response format. Default: markdown"
+            }
+          }
+        }
+      },
+      {
+        "name": "aiSkills_searchSkills",
+        "displayName": "AI Skills: Search Skills",
+        "modelDescription": "Searches the AI skills catalog by keyword using fuzzy matching. Returns skills matching the query with installation status. Use this to discover relevant skills before installing them. Use outputFormat=json for machine-readable output.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "searchSkills",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "Search query - matches against skill names, descriptions, and categories."
+            },
+            "category": {
+              "type": "string",
+              "description": "Optional category filter to narrow results."
+            },
+            "limit": {
+              "type": "number",
+              "description": "Maximum results to return. Default: 20"
+            },
+            "includeInstalled": {
+              "type": "boolean",
+              "description": "Whether to include installation status. Default: true"
+            },
+            "outputFormat": {
+              "type": "string",
+              "enum": [
+                "markdown",
+                "json"
+              ],
+              "description": "Response format. Default: markdown"
+            }
+          },
+          "required": [
+            "query"
+          ]
+        }
+      },
+      {
+        "name": "aiSkills_getSkillInfo",
+        "displayName": "AI Skills: Get Skill Info",
+        "modelDescription": "Retrieves metadata and optional preview for a specific skill without installing it. Use this to get skill details like category, risk level, and description before deciding to install. Use outputFormat=json for machine-readable output.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "getSkillInfo",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "skillId": {
+              "type": "string",
+              "description": "The skill ID to retrieve information for, e.g. \"react-patterns\"."
+            },
+            "includePreview": {
+              "type": "boolean",
+              "description": "Include full skill content preview (only if installed). Default: false"
+            },
+            "outputFormat": {
+              "type": "string",
+              "enum": [
+                "markdown",
+                "json"
+              ],
+              "description": "Response format. Default: markdown"
+            }
+          },
+          "required": [
+            "skillId"
+          ]
+        }
+      },
+      {
+        "name": "aiSkills_checkUpdates",
+        "displayName": "AI Skills: Check for Updates",
+        "modelDescription": "Checks installed skills for available updates by comparing content hashes. Call this to determine if any installed skills have newer versions available in the catalog. Use outputFormat=json for machine-readable output.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "checkUpdates",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "skillId": {
+              "type": "string",
+              "description": "Optional specific skill ID to check. If omitted, checks all installed skills."
+            },
+            "outputFormat": {
+              "type": "string",
+              "enum": [
+                "markdown",
+                "json"
+              ],
+              "description": "Response format. Default: markdown"
+            }
+          }
+        }
+      },
+      {
+        "name": "aiSkills_batchInstall",
+        "displayName": "AI Skills: Batch Install",
+        "modelDescription": "Installs multiple AI skills in a single operation. Provide an array of skill IDs or a category name to install all skills in that category. Useful for setting up a complete skill set for a project. Use outputFormat=json for machine-readable output.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "batchInstall",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "skillIds": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Array of skill IDs to install, e.g. [\"react-patterns\", \"typescript-best-practices\"]."
+            },
+            "category": {
+              "type": "string",
+              "description": "Install all skills in a category. If provided, overrides skillIds."
+            },
+            "overwrite": {
+              "type": "boolean",
+              "description": "Overwrite existing skills without prompting. Default: false"
+            },
+            "outputFormat": {
+              "type": "string",
+              "enum": [
+                "markdown",
+                "json"
+              ],
+              "description": "Response format. Default: markdown"
+            }
+          }
+        }
+      },
+      {
+        "name": "aiSkills_planInstall",
+        "displayName": "AI Skills: Plan Install",
+        "modelDescription": "Plans a skill installation from natural-language intent and can optionally install the recommended skills in one call. Use this when the user says things like 'install react testing skills'. Supports markdown or json output.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "planInstall",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "Natural-language request, e.g. \"react testing\" or \"secure REST APIs\"."
+            },
+            "limit": {
+              "type": "number",
+              "description": "Maximum number of recommendations. Default: 8"
+            },
+            "includeInstalled": {
+              "type": "boolean",
+              "description": "Whether already-installed skills should be included. Default: true"
+            },
+            "install": {
+              "type": "boolean",
+              "description": "If true, installs the recommended skills after confirmation. Default: false"
+            },
+            "overwrite": {
+              "type": "boolean",
+              "description": "Overwrite existing installed files during install. Default: false"
+            },
+            "outputFormat": {
+              "type": "string",
+              "enum": [
+                "markdown",
+                "json"
+              ],
+              "description": "Response format. Default: markdown"
+            }
+          },
+          "required": [
+            "query"
           ]
         }
       }
@@ -455,6 +686,21 @@
     "configuration": {
       "title": "AI Agent Skills",
       "properties": {
+        "aiSkills.openChatOnInstall": {
+          "type": "string",
+          "enum": [
+            "always",
+            "ask",
+            "never"
+          ],
+          "enumDescriptions": [
+            "Automatically open Copilot chat with the skill context after every install.",
+            "Ask after each install whether to open chat (shows a notification with an 'Open in Chat' button).",
+            "Never open chat automatically after installing a skill."
+          ],
+          "default": "always",
+          "description": "Controls whether skill context is automatically injected into Copilot chat after a skill is installed from the sidebar."
+        },
         "aiSkills.confirmOverwrite": {
           "type": "boolean",
           "default": true,

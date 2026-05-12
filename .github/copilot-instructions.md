@@ -27,7 +27,13 @@ src/
   commands/         ← one file per command (camelCase verb+noun)
   skills/           ← SkillsManager, SkillsRepository, FuzzySearch, RemoteSync, WorkspaceScanner
   installers/       ← baseInstaller.ts, projectLocalInstaller.ts
-  tools/            ← requestSkillTool.ts (Copilot LM Tool)
+  tools/            ← Language Model Tools for AI assistants
+                      - requestSkillTool.ts (install & load skill content)
+                      - listInstalledTool.ts (list installed skills)
+                      - searchSkillsTool.ts (search catalog)
+                      - getSkillInfoTool.ts (get skill metadata)
+                      - checkUpdatesTool.ts (check for updates)
+                      - batchInstallTool.ts (install multiple skills)
   tree/             ← SkillsTreeProvider + nodes.ts
   security.ts       ← path validation (isValidSkillId, isPathWithin) — never bypass
 assets/
@@ -74,17 +80,26 @@ When the user asks "what skill should I use?", "which skill fits my project?", o
 
 ## Using the Skill Request Tool
 
-This extension registers a **Language Model Tool** (`aiSkills_requestSkill`) that you can call _during any Copilot response_ to install and inject a skill's instructions into your active context.
+This extension registers **6 Language Model Tools** that you can call during any Copilot response to interact with the AI Skills system programmatically.
 
-### When to call it
+### Available Tools
 
-Call `#tool:aiSkills_requestSkill` when:
+| Tool                     | Purpose                               | Example Input                                                |
+| ------------------------ | ------------------------------------- | ------------------------------------------------------------ |
+| `aiSkills_requestSkill`  | Install & load a skill's full content | `{"skillId": "react-patterns"}`                              |
+| `aiSkills_listInstalled` | List all installed skills             | `{"category": "react", "limit": 10}`                         |
+| `aiSkills_searchSkills`  | Search catalog by keyword             | `{"query": "aws", "limit": 15}`                              |
+| `aiSkills_getSkillInfo`  | Get skill metadata                    | `{"skillId": "api-design", "includePreview": false}`         |
+| `aiSkills_checkUpdates`  | Check for skill updates               | `{}` (all) or `{"skillId": "react-patterns"}`                |
+| `aiSkills_batchInstall`  | Install multiple skills               | `{"skillIds": ["react", "ts"]}` or `{"category": "backend"}` |
 
-- The user is asking about a topic where a skill from the catalog would materially improve your answer.
-- You have identified the correct skill ID from `#file:assets/skills-catalog.md` (or `#file:.agent/skills-catalog.md` if it exists).
-- The skill is **not already loaded** in the current context.
+---
 
-Common trigger patterns and their matching skill IDs:
+### 1. `aiSkills_requestSkill` — Install & Load Skill
+
+**When to call:** When you need domain-specific knowledge that a skill from the catalog would materially improve your answer.
+
+**Common trigger patterns:**
 
 | User is asking about              | Call with skillId                         |
 | --------------------------------- | ----------------------------------------- |
@@ -101,28 +116,143 @@ Common trigger patterns and their matching skill IDs:
 | CrewAI multi-agent                | `crewai`                                  |
 | Testing, TDD                      | `tdd-orchestrator`                        |
 
-### How to call it
+**How to call:**
 
 ```
 #tool:aiSkills_requestSkill {"skillId": "<kebab-case-skill-id>"}
 ```
 
-Example:
+**Behavior:**
+
+- **Already installed:** Loads content immediately — no confirmation prompt
+- **Not installed:** Shows user confirmation dialog before writing any file
+- **On error:** Returns informative message; continue without the skill
+
+---
+
+### 2. `aiSkills_listInstalled` — List Installed Skills
+
+**When to call:** When you need to discover what skills are already available in the current workspace without installing new ones.
+
+**Input Schema:**
+
+```json
+{
+  "category": "string", // Optional: Filter by category
+  "limit": "number" // Optional: Max results (default: 100)
+}
+```
+
+**Example:**
 
 ```
-#tool:aiSkills_requestSkill {"skillId": "api-design-principles"}
+#tool:aiSkills_listInstalled {"category": "react", "limit": 20}
 ```
 
-### Behavior
+**Returns:** List of installed skills with id, name, category, description, and installed path.
 
-- **If the skill is already installed** (`.agent/skills/<id>/SKILL.md` exists): the tool loads and returns the content immediately — no confirmation prompt shown to the user.
-- **If the skill is not installed**: VS Code shows the user a confirmation dialog _before_ any file is written. The user can approve or decline.
-- **If approved**: the skill is installed to `.agent/skills/<id>/SKILL.md` and its content is returned to you as tool output. Incorporate the guidance into your response.
-- **If declined or on error**: the tool returns an informative message. Continue your response without the skill.
+---
 
-### Rules
+### 3. `aiSkills_searchSkills` — Search Skill Catalog
 
-1. **Check the catalog first** — only call this tool if you can identify a specific, high-confidence skill ID. Never guess a skill ID.
+**When to call:** When the user asks for skill recommendations or you need to discover relevant skills by keyword.
+
+**Input Schema:**
+
+```json
+{
+  "query": "string", // Required: Search keyword
+  "category": "string", // Optional: Filter by category
+  "limit": "number", // Optional: Max results (default: 20)
+  "includeInstalled": "boolean" // Optional: Show install status (default: true)
+}
+```
+
+**Example:**
+
+```
+#tool:aiSkills_searchSkills {"query": "aws lambda", "limit": 10}
+```
+
+**Returns:** Skills matching the query with relevance scores, installation status, and metadata.
+
+---
+
+### 4. `aiSkills_getSkillInfo` — Get Skill Metadata
+
+**When to call:** When you need to verify a skill exists or get its description, category, and risk level before installing.
+
+**Input Schema:**
+
+```json
+{
+  "skillId": "string", // Required: The skill ID
+  "includePreview": "boolean" // Optional: Include content preview if installed (default: false)
+}
+```
+
+**Example:**
+
+```
+#tool:aiSkills_getSkillInfo {"skillId": "react-patterns", "includePreview": false}
+```
+
+**Returns:** Skill metadata including name, category, description, risk level, source, and installation status.
+
+---
+
+### 5. `aiSkills_checkUpdates` — Check for Updates
+
+**When to call:** Periodically or when the user asks about skill updates. Compares installed skill content hashes against the latest bundled versions.
+
+**Input Schema:**
+
+```json
+{
+  "skillId": "string" // Optional: Check specific skill. Omit to check all installed skills.
+}
+```
+
+**Example:**
+
+```
+#tool:aiSkills_checkUpdates {}  // Check all installed skills
+#tool:aiSkills_checkUpdates {"skillId": "react-patterns"}  // Check specific skill
+```
+
+**Returns:** Update status for each skill with hash comparison results.
+
+---
+
+### 6. `aiSkills_batchInstall` — Install Multiple Skills
+
+**When to call:** When setting up a project with multiple skills or installing an entire category at once.
+
+**Input Schema:**
+
+```json
+{
+  "skillIds": ["string"], // Optional: Array of skill IDs to install
+  "category": "string", // Optional: Install all skills in a category (overrides skillIds)
+  "overwrite": "boolean" // Optional: Overwrite existing skills (default: false)
+}
+```
+
+**Example:**
+
+```
+#tool:aiSkills_batchInstall {"skillIds": ["react-patterns", "typescript-best-practices"]}
+#tool:aiSkills_batchInstall {"category": "api-design"}  // Install all API design skills
+```
+
+**Behavior:** Shows confirmation dialog with count of skills to install. Returns detailed results for each skill (installed, skipped, or failed).
+
+---
+
+### Rules for All Tools
+
+1. **Check the catalog first** — Only call tools if you can identify a specific, high-confidence skill ID. Never guess a skill ID.
 2. **No restrictions to call skills** — You can pick any number of skills but picked skills must be relevant.
-3. **Call before generating the main body** — invoke the tool at the start of your response so the content is in context when you write your answer.
-4. **Do not loop** — if the tool returns an error, proceed without retrying.
+3. **Call before generating the main body** — Invoke tools at the start of your response so the content is in context when you write your answer.
+4. **Do not loop** — If a tool returns an error, proceed without retrying.
+5. **Respect user confirmation** — Installation tools show confirmation dialogs; do not attempt to bypass them.

@@ -14,6 +14,7 @@ import {
 import { InstallOptions, InstallResult } from '../installers/types';
 import { ProjectLocalInstaller } from '../installers/projectLocalInstaller';
 import { SkillUpdateTracker } from '../skills/SkillUpdateTracker';
+import { maybePushToChat } from '../chat/openInChat';
 
 // ─── Path helper ──────────────────────────────────────────────────────────────
 
@@ -56,6 +57,8 @@ interface InstallCounts {
   skipped: number;
   failed: number;
   cancelled: boolean;
+  /** IDs that were successfully written to disk in this operation. */
+  installedIds: string[];
 }
 
 async function installSingleSkill(
@@ -150,7 +153,13 @@ export async function bulkInstall(
     overwriteExisting = true;
   }
 
-  const counts: InstallCounts = { installed: 0, skipped: 0, failed: 0, cancelled: false };
+  const counts: InstallCounts = {
+    installed: 0,
+    skipped: 0,
+    failed: 0,
+    cancelled: false,
+    installedIds: [],
+  };
 
   await vscode.window.withProgress(
     {
@@ -176,11 +185,16 @@ export async function bulkInstall(
           tracker
         );
         counts[outcome]++;
+        if (outcome === 'installed') {
+          counts.installedIds.push(skills[i].id);
+        }
       }
     }
   );
 
   reportResults(counts);
+  // Push successfully installed skills into chat, honouring the openChatOnInstall setting.
+  await maybePushToChat(counts.installedIds);
 }
 
 // ─── Bulk uninstall helper ────────────────────────────────────────────────────
