@@ -11,3 +11,4 @@ npm-debug.log*
 # Auto-generated skills catalog (re-created by the extension on each remote sync)
 .agent/skills-catalog.md
 .agent/skills/
+.env

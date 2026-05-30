@@ -3,12 +3,14 @@ name: Release
 on:
   push:
     tags:
-      - "v*"
+      - 'v*'
 
 jobs:
   release:
     name: Package and Publish
     runs-on: ubuntu-latest
+    env:
+      AI_SKILLS_ROOT: /tmp/copilot-superpowers
 
     steps:
       - name: Checkout
@@ -22,14 +24,12 @@ jobs:
 
       - name: Fetch ai-skills data
         run: |
-          git clone --depth=1 https://github.com/aliabbaschadhar/antigravity-awesome-skills.git /tmp/agent-superpowers || \
-          git clone --depth=1 https://github.com/sickn33/antigravity-awesome-skills.git /tmp/agent-superpowers
+          git clone --depth=1 https://github.com/aliabbaschadhar/antigravity-awesome-skills.git /tmp/copilot-superpowers || \
+          git clone --depth=1 https://github.com/sickn33/antigravity-awesome-skills.git /tmp/copilot-superpowers
         continue-on-error: true
 
       - name: Run prebuild
         run: node scripts/prebuild.js
-        env:
-          AI_SKILLS_ROOT: /tmp/agent-superpowers
 
       - name: Build production bundle
         run: node esbuild.config.js --production
@@ -41,13 +41,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: agent-superpowers-vsix
-          path: "*.vsix"
+          path: '*.vsix'
           retention-days: 90
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          files: "*.vsix"
+          files: '*.vsix'
           generate_release_notes: true
 
       - name: Publish to VS Code Marketplace
