@@ -28,6 +28,7 @@ test-out/
 # Skill content is fetched on-demand and cached in globalStorage.
 # Only the index (skills_index.json) and manifest need to ship.
 assets/skills/
+.env
 
 # Keep in vsix:
 # dist/extension.js

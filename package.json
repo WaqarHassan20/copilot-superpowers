@@ -2,7 +2,7 @@
   "name": "copilot-superpowers",
   "displayName": "Copilot Superpowers",
   "description": "Browse, preview, and install 940+ AI agent skills for GitHub Copilot, Cursor, Windsurf and AntiGravity.",
-  "version": "0.3.0-beta",
+  "version": "0.3.2",
   "publisher": "aliabbaschadhar",
   "license": "MIT",
   "icon": "media/icon.png",
