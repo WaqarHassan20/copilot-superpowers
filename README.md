@@ -321,6 +321,20 @@ This extension provides **7 Language Model Tools** that GitHub Copilot and other
 
 ---
 
+## Development
+
+This extension uses [Bun](https://bun.sh) for installs and scripts (see `bun.lock`).
+
+```bash
+bun install
+bun run compile        # one-off build
+bun run compile:watch  # watch mode (also used by F5 preLaunchTask)
+```
+
+Press **F5** in VS Code to launch an Extension Development Host. The workspace preLaunch task runs `bun run compile:watch` — do not use `npm install` / `npm run` for local development.
+
+---
+
 ## Contributing & Support
 
 - Bugs / features → [GitHub Issues](https://github.com/aliabbaschadhar/copilot-superpowers/issues)

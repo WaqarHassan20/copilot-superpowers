@@ -12,3 +12,6 @@ npm-debug.log*
 .agent/skills-catalog.md
 .agent/skills/
 .env
+
+.marscode
+.vscode

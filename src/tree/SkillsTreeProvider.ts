@@ -2,6 +2,11 @@ import * as vscode from 'vscode';
 import { SkillsManager } from '../skills/SkillsManager';
 import { SkillEntry } from '../skills/types';
 import {
+  ActivitySectionGapItem,
+  ActivityStatusLineItem,
+  ActivityStepsGapItem,
+  AgentActivityItem,
+  AgentActivityPlaceholderItem,
   AllCategoriesItem,
   CategoryItem,
   CollectionItem,
@@ -10,12 +15,14 @@ import {
   GettingStartedItem,
   GettingStartedTipItem,
   InstalledSectionItem,
+  LiveAgentActivitySectionItem,
   RecommendedSectionItem,
   SkillItem,
   SummaryItem,
   SkillTreeNode,
   UserCollectionItem,
 } from './nodes';
+import { AgentActivityTracker } from '../activity/AgentActivityTracker';
 import { CTX_INSTALLED_FILTER } from '../constants';
 import { FavoriteSkills } from '../favoriteSkills';
 import { SKILL_COLLECTIONS } from '../skills/collections';
@@ -34,8 +41,11 @@ export class SkillsTreeProvider implements vscode.TreeDataProvider<SkillTreeNode
     private readonly manager: SkillsManager,
     private readonly favoriteSkills: FavoriteSkills,
     private readonly userCollections: UserCollections,
-    private readonly showOnboarding: boolean = false
-  ) {}
+    private readonly showOnboarding: boolean = false,
+    private readonly activityTracker?: AgentActivityTracker
+  ) {
+    activityTracker?.onDidChange(() => this._onDidChangeTreeData.fire());
+  }
 
   /** Update recommended skills from workspace scan. Always triggers a tree refresh. */
   setRecommendations(skills: SkillEntry[], techs: string[]): void {
@@ -79,6 +89,34 @@ export class SkillsTreeProvider implements vscode.TreeDataProvider<SkillTreeNode
   getChildren(el?: SkillTreeNode): SkillTreeNode[] {
     if (!el) {
       return this.buildRootChildren();
+    }
+
+    if (el instanceof LiveAgentActivitySectionItem) {
+      if (!this.activityTracker) {
+        return [];
+      }
+
+      const status = this.activityTracker.getStatusDetail();
+      const steps = this.activityTracker.getDisplaySteps();
+
+      if (steps.length === 0 && status.phase === 'idle') {
+        return [
+          new AgentActivityPlaceholderItem(),
+          new ActivityStepsGapItem(),
+          new ActivityStatusLineItem('Skill', status.skillId),
+          new ActivityStatusLineItem('Status', status.detail),
+          new ActivityStatusLineItem('Time', '—'),
+        ];
+      }
+
+      const time = new Date(status.timestamp).toLocaleTimeString();
+      return [
+        ...steps.map((entry) => new AgentActivityItem(entry)),
+        new ActivityStepsGapItem(),
+        new ActivityStatusLineItem('Skill', status.skillId),
+        new ActivityStatusLineItem('Status', `${status.detail} · ${status.phase}`),
+        new ActivityStatusLineItem('Time', time),
+      ];
     }
 
     if (el instanceof GettingStartedItem) {
@@ -256,6 +294,17 @@ export class SkillsTreeProvider implements vscode.TreeDataProvider<SkillTreeNode
           })
       : [new AllCategoriesItem(categories.length)];
 
+    const activityBlock: SkillTreeNode[] = this.activityTracker
+      ? [
+          new ActivitySectionGapItem(),
+          new ActivitySectionGapItem(),
+          new ActivitySectionGapItem(),
+          new ActivitySectionGapItem(),
+          new ActivitySectionGapItem(),
+          new LiveAgentActivitySectionItem(this.activityTracker.hasActiveOperation()),
+        ]
+      : [];
+
     return [
       new SummaryItem(total, installedCount),
       ...onboarding,
@@ -264,6 +313,7 @@ export class SkillsTreeProvider implements vscode.TreeDataProvider<SkillTreeNode
       ...installedSection,
       ...collections,
       ...categoryNodes,
+      ...activityBlock,
     ];
   }
 

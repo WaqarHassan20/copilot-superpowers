@@ -9,6 +9,8 @@ import { FuzzySearch } from '../skills/FuzzySearch';
 import { ProjectLocalInstaller } from '../installers/projectLocalInstaller';
 import { InstallOptions } from '../installers/types';
 import { openSkillsInChat } from '../chat/openInChat';
+import { AgentActivityTracker } from '../activity/AgentActivityTracker';
+import { trackSkillResolveAndInstall } from '../activity/trackSkillInstall';
 
 /**
  * Parses special filter prefixes from browse query text.
@@ -108,7 +110,8 @@ function toQuickPickItem(skill: SkillEntry, isFavorite = false): vscode.QuickPic
 async function handleSkillSelection(
   skillId: string,
   manager: SkillsManager,
-  recentSkills: RecentSkills
+  recentSkills: RecentSkills,
+  activityTracker?: AgentActivityTracker
 ): Promise<void> {
   recentSkills.add(skillId);
 
@@ -118,20 +121,38 @@ async function handleSkillSelection(
     return;
   }
 
-  const skillFiles = await manager.readSkillDirectory(skill);
-  const content = skillFiles.get('SKILL.md') ?? (await manager.readContent(skill));
   const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-
   if (!workspaceRoot) {
     vscode.window.showWarningMessage('Open a workspace folder to install skills project-locally.');
     return;
   }
-  if (!content) {
-    vscode.window.showWarningMessage(`Skill '${skillId}' has no readable content.`);
-    return;
+
+  const runInstall = async (skillFiles: Map<string, string>, content: string) => {
+    await installSkillLocally(skill.id, content, skillFiles, workspaceRoot);
+    return { success: true };
+  };
+
+  if (activityTracker) {
+    const outcome = await trackSkillResolveAndInstall(
+      activityTracker,
+      skillId,
+      manager,
+      skill,
+      runInstall
+    );
+    if (!outcome?.success) {
+      return;
+    }
+  } else {
+    const skillFiles = await manager.readSkillDirectory(skill);
+    const content = skillFiles.get('SKILL.md') ?? (await manager.readContent(skill));
+    if (!content) {
+      vscode.window.showWarningMessage(`Skill '${skillId}' has no readable content.`);
+      return;
+    }
+    await installSkillLocally(skill.id, content, skillFiles, workspaceRoot);
   }
 
-  await installSkillLocally(skill.id, content, skillFiles, workspaceRoot);
   await openSkillsInChat([skill.id]);
 }
 
@@ -163,7 +184,8 @@ async function installSkillLocally(
 export function registerBrowseCommand(
   manager: SkillsManager,
   recentSkills: RecentSkills,
-  favoriteSkills: FavoriteSkills
+  favoriteSkills: FavoriteSkills,
+  activityTracker?: AgentActivityTracker
 ): vscode.Disposable {
   return vscode.commands.registerCommand('aiSkills.browse', async () => {
     const skills = manager.getAll();
@@ -351,7 +373,7 @@ export function registerBrowseCommand(
             .replace(/\$\([^)]+\)\s*/g, '') // remove every $(icon) and trailing whitespace
             .replace(/^\//, '') // remove leading slash
             .trim();
-          await handleSkillSelection(skillId, manager, recentSkills);
+          await handleSkillSelection(skillId, manager, recentSkills, activityTracker);
         }
       });
 

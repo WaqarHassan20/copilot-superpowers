@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 import { SkillsManager } from '../skills/SkillsManager';
 import { FuzzySearch } from '../skills/FuzzySearch';
 import { log } from '../logger';
+import { AgentActivityTracker } from '../activity/AgentActivityTracker';
+import { trackSkillResolveAndLoad } from '../activity/trackSkillInstall';
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -60,6 +62,7 @@ function normaliseQuery(raw: string): string {
 
 async function handleRequest(
   manager: SkillsManager,
+  activityTracker: AgentActivityTracker | undefined,
   request: vscode.ChatRequest,
   _context: vscode.ChatContext,
   response: vscode.ChatResponseStream,
@@ -136,9 +139,9 @@ async function handleRequest(
   log(`SkillsChatParticipant: loading "${skill.id}"…`);
   response.progress(`Loading skill: ${skill.id}…`);
 
-  // Read all files — no disk install required for the chat path.
-  // readSkillDirectory checks bundle → storage cache → remote (with cache write).
-  const skillFiles = await manager.readSkillDirectory(skill);
+  const skillFiles = activityTracker
+    ? await trackSkillResolveAndLoad(activityTracker, skill.id, manager, skill)
+    : await manager.readSkillDirectory(skill);
 
   if (skillFiles.size === 0) {
     response.markdown(
@@ -200,10 +203,14 @@ function provideFollowups(
  * Creates and registers the @aiSkills chat participant.
  * Returns a Disposable for cleanup on deactivation.
  */
-export function registerSkillsChatParticipant(manager: SkillsManager): vscode.Disposable {
+export function registerSkillsChatParticipant(
+  manager: SkillsManager,
+  activityTracker?: AgentActivityTracker
+): vscode.Disposable {
   const participant = vscode.chat.createChatParticipant(
     PARTICIPANT_ID,
-    (request, context, response, token) => handleRequest(manager, request, context, response, token)
+    (request, context, response, token) =>
+      handleRequest(manager, activityTracker, request, context, response, token)
   );
 
   participant.iconPath = new vscode.ThemeIcon('symbol-event');
