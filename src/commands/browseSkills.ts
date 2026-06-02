@@ -140,6 +140,9 @@ async function handleSkillSelection(
       runInstall
     );
     if (!outcome?.success) {
+      vscode.window.showErrorMessage(
+        outcome?.message || `Failed to resolve or install skill '${skillId}'.`
+      );
       return;
     }
   } else {
@@ -151,6 +154,9 @@ async function handleSkillSelection(
     }
     const outcome = await installSkillLocally(skill.id, content, skillFiles, workspaceRoot);
     if (!outcome.success) {
+      vscode.window.showErrorMessage(
+        outcome.message || `Failed to install skill '${skillId}' locally.`
+      );
       return;
     }
   }

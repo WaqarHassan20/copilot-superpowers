@@ -113,14 +113,6 @@ async function handleActivate(
   skillId: string,
   response: vscode.ChatResponseStream
 ): Promise<vscode.ChatResult> {
-  if (!isValidSkillId(skillId)) {
-    response.markdown(
-      `Skill **\`${skillId}\`** is not a valid skill identifier.\n\n` +
-        `Try \`@aiSkills search ${skillId}\` to find similar skills.`
-    );
-    return {};
-  }
-
   // Try exact match first, then fuzzy fallback
   let skill = manager.findById(skillId);
   if (!skill) {
@@ -131,9 +123,9 @@ async function handleActivate(
     }
   }
 
-  if (!skill) {
+  if (!skill || !isValidSkillId(skill.id)) {
     response.markdown(
-      `Skill **\`${skillId}\`** was not found in the catalog.\n\n` +
+      `Skill **\`${skill?.id || skillId}\`** is not a valid skill identifier.\n\n` +
         `Try \`@aiSkills search ${skillId}\` to find similar skills.`
     );
     return {};

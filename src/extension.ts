@@ -164,6 +164,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   context.subscriptions.push(
     activityTracker,
+    treeProvider,
     treeView,
     registerBrowseCommand(manager, recentSkills, favoriteSkills, activityTracker),
     registerInstallCommand(manager, recentSkills, tracker, context, activityTracker),
@@ -173,9 +174,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     registerUninstallCommand(manager),
     registerUninstallAllCommand(manager, treeProvider),
     registerBulkCopySkillsCommand(manager),
-    registerInstallCategoryCommand(manager, activityTracker),
-    registerInstallAllCommand(manager, treeProvider, activityTracker),
-    registerInstallCollectionCommand(manager, activityTracker),
+    registerInstallCategoryCommand(manager, tracker, context, activityTracker),
+    registerInstallAllCommand(manager, treeProvider, tracker, context, activityTracker),
+    registerInstallCollectionCommand(manager, tracker, context, activityTracker),
     registerUninstallCategoryCommand(manager, treeProvider),
     registerUninstallCollectionCommand(manager, treeProvider),
     registerToggleFavoriteCommand(favoriteSkills, treeProvider),

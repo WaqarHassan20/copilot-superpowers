@@ -124,7 +124,7 @@ export class RequestSkillTool implements vscode.LanguageModelTool<RequestSkillIn
     }
 
     const skillFiles =
-      this.activityTracker && wasInstalled
+      this.activityTracker && this.manager.isInstalled(skillId)
         ? await trackSkillResolveAndLoad(this.activityTracker, skillId, this.manager, skill)
         : await this.manager.readSkillDirectory(skill);
     if (skillFiles.size === 0) {

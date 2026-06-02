@@ -303,6 +303,8 @@ async function bulkUninstallSkills(
 /** Right-click a category node → "Install All in Category" */
 export function registerInstallCategoryCommand(
   manager: SkillsManager,
+  tracker?: SkillUpdateTracker,
+  context?: vscode.ExtensionContext,
   activityTracker?: AgentActivityTracker
 ): vscode.Disposable {
   return vscode.commands.registerCommand(
@@ -317,8 +319,8 @@ export function registerInstallCategoryCommand(
         skills,
         `"${item.category}" (${skills.length} skills)`,
         manager,
-        undefined,
-        undefined,
+        tracker,
+        context,
         activityTracker
       );
     }
@@ -329,6 +331,8 @@ export function registerInstallCategoryCommand(
 export function registerInstallAllCommand(
   manager: SkillsManager,
   treeProvider: SkillsTreeProvider,
+  tracker?: SkillUpdateTracker,
+  context?: vscode.ExtensionContext,
   activityTracker?: AgentActivityTracker
 ): vscode.Disposable {
   return vscode.commands.registerCommand('aiSkills.installAll', async () => {
@@ -336,7 +340,7 @@ export function registerInstallAllCommand(
     const label = treeProvider.isFiltering()
       ? `filtered results (${skills.length} skills)`
       : `all skills (${skills.length})`;
-    await bulkInstall(skills, label, manager, undefined, undefined, activityTracker);
+    await bulkInstall(skills, label, manager, tracker, context, activityTracker);
   });
 }
 /** Right-click a fully-installed category node → "Uninstall All in Category" */
@@ -403,6 +407,8 @@ export function registerUninstallCollectionCommand(
 /** Right-click a collection node → "Install Collection" */
 export function registerInstallCollectionCommand(
   manager: SkillsManager,
+  tracker?: SkillUpdateTracker,
+  context?: vscode.ExtensionContext,
   activityTracker?: AgentActivityTracker
 ): vscode.Disposable {
   return vscode.commands.registerCommand(
@@ -418,8 +424,8 @@ export function registerInstallCollectionCommand(
           item.skills,
           `recommended skills (${item.skills.length} skills)`,
           manager,
-          undefined,
-          undefined,
+          tracker,
+          context,
           activityTracker
         );
         return;
@@ -446,8 +452,8 @@ export function registerInstallCollectionCommand(
         skills,
         `"${collection.name}" collection (${skills.length} skills)`,
         manager,
-        undefined,
-        undefined,
+        tracker,
+        context,
         activityTracker
       );
     }

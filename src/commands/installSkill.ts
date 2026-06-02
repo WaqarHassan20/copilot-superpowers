@@ -9,6 +9,7 @@ import { maybePushToChat } from '../chat/openInChat';
 import { patchGitignoreOnFirstInstall } from '../gitignore/patchGitignore';
 import { AgentActivityTracker } from '../activity/AgentActivityTracker';
 import { trackSkillResolveAndInstall } from '../activity/trackSkillInstall';
+import { isValidSkillId } from '../security';
 
 export function registerInstallCommand(
   manager: SkillsManager,
@@ -41,6 +42,13 @@ export function registerInstallCommand(
     const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
 
     const runInstall = async () => {
+      if (!resolvedId || !isValidSkillId(resolvedId)) {
+        return {
+          success: false,
+          message: `Invalid skill ID '${resolvedId || ''}'.`,
+        };
+      }
+
       if (!workspaceRoot) {
         return {
           success: false,
@@ -112,17 +120,27 @@ export function registerInstallCommand(
       if (context) {
         await patchGitignoreOnFirstInstall(context);
       }
-      const action = await vscode.window.showInformationMessage(
-        `Installed to .agent/skills/${resolvedId}/SKILL.md`,
-        'Open File'
-      );
-      if (action === 'Open File' && workspaceRoot) {
+      let destPath: string | undefined;
+      if (workspaceRoot) {
         try {
-          const destPath = new ProjectLocalInstaller().targetPath({
+          destPath = new ProjectLocalInstaller().targetPath({
             skillId: resolvedId!,
             skillContent: '',
             workspaceRoot,
           });
+        } catch {
+          // ignore
+        }
+      }
+      const displayPath = destPath
+        ? vscode.workspace.asRelativePath(destPath)
+        : `.agent/skills/${resolvedId}/SKILL.md`;
+      const action = await vscode.window.showInformationMessage(
+        `Installed to ${displayPath}`,
+        'Open File'
+      );
+      if (action === 'Open File' && destPath) {
+        try {
           await vscode.window.showTextDocument(vscode.Uri.file(destPath));
         } catch {
           // File may not be readable in all editors
