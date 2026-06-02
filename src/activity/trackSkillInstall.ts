@@ -11,6 +11,38 @@ export interface SkillInstallOutcome {
   message?: string;
 }
 
+async function resolveSkillFilesAndContent(
+  skill: SkillEntry,
+  manager: SkillsManager
+): Promise<{ skillFiles: Map<string, string>; content: string | undefined }> {
+  let skillFiles = await manager.readSkillDirectory(skill);
+  let content: string | undefined;
+  if (skillFiles.size === 0) {
+    content = (await manager.readContent(skill)) ?? undefined;
+    if (content) {
+      skillFiles = new Map([['SKILL.md', content]]);
+    }
+  } else {
+    content = skillFiles.get('SKILL.md') ?? (await manager.readContent(skill)) ?? undefined;
+  }
+  return { skillFiles, content };
+}
+
+function handleInstallOutcome(
+  result: SkillInstallOutcome | undefined,
+  tracker: AgentActivityTracker
+): void {
+  if (result === undefined) {
+    tracker.fail('Cancelled');
+    return;
+  }
+  if (result.success) {
+    tracker.completeDone();
+  } else {
+    tracker.fail(result.message ?? 'Failed');
+  }
+}
+
 export async function trackSkillResolveAndInstall(
   tracker: AgentActivityTracker,
   skillId: string,
@@ -25,30 +57,7 @@ export async function trackSkillResolveAndInstall(
   try {
     await yieldToUi();
 
-    const skillFiles = await manager.readSkillDirectory(skill);
-    if (skillFiles.size === 0) {
-      const content = await manager.readContent(skill);
-      if (!content) {
-        tracker.fail('Content missing');
-        return undefined;
-      }
-      tracker.finishLoading(1);
-      await yieldToUi();
-      tracker.startInstalling();
-      await yieldToUi();
-      const singleResult = await install(new Map([['SKILL.md', content]]), content);
-      if (singleResult === undefined) {
-        return undefined;
-      }
-      if (singleResult.success) {
-        tracker.completeDone();
-      } else {
-        tracker.fail(singleResult.message ?? 'Failed');
-      }
-      return singleResult;
-    }
-
-    const content = skillFiles.get('SKILL.md') ?? (await manager.readContent(skill));
+    const { skillFiles, content } = await resolveSkillFilesAndContent(skill, manager);
     if (!content) {
       tracker.fail('Content missing');
       return undefined;
@@ -60,14 +69,7 @@ export async function trackSkillResolveAndInstall(
     await yieldToUi();
 
     const result = await install(skillFiles, content);
-    if (result === undefined) {
-      return undefined;
-    }
-    if (result.success) {
-      tracker.completeDone();
-    } else {
-      tracker.fail(result.message ?? 'Failed');
-    }
+    handleInstallOutcome(result, tracker);
     return result;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);

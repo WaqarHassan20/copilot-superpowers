@@ -112,6 +112,8 @@ const CATEGORY_ICONS: Record<string, string> = {
 
 function activityIcon(state: ActivityState): vscode.ThemeIcon {
   switch (state) {
+    case 'pending':
+      return new vscode.ThemeIcon('circle-outline', new vscode.ThemeColor('descriptionForeground'));
     case 'running':
       return new vscode.ThemeIcon('sync~spin');
     case 'success':

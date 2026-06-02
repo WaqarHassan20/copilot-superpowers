@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-export type ActivityState = 'running' | 'success' | 'error';
+export type ActivityState = 'pending' | 'running' | 'success' | 'error';
 
 export type ActivityPhase = 'idle' | 'loading' | 'installing' | 'done' | 'failed';
 
@@ -23,7 +23,8 @@ export interface ActivityStatusDetail {
 interface ActivityOperation {
   skillId: string;
   step1: ActivityEntry;
-  step2?: ActivityEntry;
+  step2: ActivityEntry;
+  step3: ActivityEntry;
   status: ActivityStatusDetail;
 }
 
@@ -63,7 +64,7 @@ export function yieldToUi(): Promise<void> {
 
 /**
  * Tracks one active skill operation at a time for the sidebar:
- * step 1 Loading skill, step 2 Installed/Done, plus a status detail panel.
+ * 3 steps (Loading skill, Installing skill, Done), plus a status detail panel.
  */
 export class AgentActivityTracker implements vscode.Disposable {
   private currentOperation: ActivityOperation | undefined;
@@ -78,8 +79,8 @@ export class AgentActivityTracker implements vscode.Disposable {
     if (!this.currentOperation) {
       return [];
     }
-    const { step1, step2 } = this.currentOperation;
-    return step2 ? [step1, step2] : [step1];
+    const { step1, step2, step3 } = this.currentOperation;
+    return [step1, step2, step3];
   }
 
   getStatusDetail(): ActivityStatusDetail {
@@ -87,14 +88,18 @@ export class AgentActivityTracker implements vscode.Disposable {
   }
 
   beginSkillOperation(skillId: string): void {
-    const step1 = createEntry(skillId, 'Loading skill', '…', 'running');
+    const step1 = createEntry(skillId, 'Loading skill', 'loading…', 'running');
+    const step2 = createEntry(skillId, 'Installing skill', 'queued', 'pending');
+    const step3 = createEntry(skillId, 'Done', 'queued', 'pending');
     this.currentOperation = {
       skillId,
       step1,
+      step2,
+      step3,
       status: {
         skillId,
         phase: 'loading',
-        detail: '…',
+        detail: 'loading…',
         timestamp: Date.now(),
       },
     };
@@ -123,7 +128,8 @@ export class AgentActivityTracker implements vscode.Disposable {
     if (!op) {
       return;
     }
-    op.step2 = createEntry(op.skillId, 'Installed', 'installing…', 'running');
+    op.step2.statusText = 'installing…';
+    op.step2.state = 'running';
     op.status = {
       skillId: op.skillId,
       phase: 'installing',
@@ -135,11 +141,13 @@ export class AgentActivityTracker implements vscode.Disposable {
 
   completeDone(): void {
     const op = this.currentOperation;
-    if (!op?.step2) {
+    if (!op) {
       return;
     }
     op.step2.statusText = 'done';
     op.step2.state = 'success';
+    op.step3.statusText = 'success';
+    op.step3.state = 'success';
     op.status = {
       skillId: op.skillId,
       phase: 'done',
@@ -149,13 +157,16 @@ export class AgentActivityTracker implements vscode.Disposable {
     this.fireChange();
   }
 
-  /** Load-only path: step 2 is Done (no install phase). */
+  /** Load-only path: step 2/3 Done (no install phase needed). */
   completeLoadOnly(): void {
     const op = this.currentOperation;
     if (!op) {
       return;
     }
-    op.step2 = createEntry(op.skillId, 'Done', 'success', 'success');
+    op.step2.statusText = 'not needed';
+    op.step2.state = 'success';
+    op.step3.statusText = 'success';
+    op.step3.state = 'success';
     op.status = {
       skillId: op.skillId,
       phase: 'done',
@@ -171,14 +182,24 @@ export class AgentActivityTracker implements vscode.Disposable {
       return;
     }
     const short = message.length > 24 ? message.slice(0, 21) + '…' : message;
-    const running = op.step2?.state === 'running' ? op.step2 : op.step1;
+
+    // Find whichever step was active/running and mark it as error
+    const running =
+      op.step3.state === 'running' ? op.step3 : op.step2.state === 'running' ? op.step2 : op.step1;
     running.statusText = short;
     running.state = 'error';
-    if (op.step2 && running === op.step2) {
-      op.step2.label = 'Failed';
+
+    if (running === op.step1) {
+      op.step1.label = 'Loading failed';
+      op.step2.statusText = 'cancelled';
+      op.step3.statusText = 'cancelled';
+    } else if (running === op.step2) {
+      op.step2.label = 'Installing failed';
+      op.step3.statusText = 'cancelled';
     } else {
-      op.step1.label = 'Failed';
+      op.step3.label = 'Failed';
     }
+
     op.status = {
       skillId: op.skillId,
       phase: 'failed',

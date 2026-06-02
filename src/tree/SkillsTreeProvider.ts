@@ -28,7 +28,9 @@ import { FavoriteSkills } from '../favoriteSkills';
 import { SKILL_COLLECTIONS } from '../skills/collections';
 import { UserCollections } from '../skills/UserCollections';
 
-export class SkillsTreeProvider implements vscode.TreeDataProvider<SkillTreeNode> {
+export class SkillsTreeProvider
+  implements vscode.TreeDataProvider<SkillTreeNode>, vscode.Disposable
+{
   private readonly _onDidChangeTreeData = new vscode.EventEmitter<void>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
@@ -36,6 +38,7 @@ export class SkillsTreeProvider implements vscode.TreeDataProvider<SkillTreeNode
   private recommendedSkills: SkillEntry[] = [];
   private detectedTechs: string[] = [];
   private outdatedIds: Set<string> = new Set();
+  private readonly _activityDisposable: vscode.Disposable | undefined;
 
   constructor(
     private readonly manager: SkillsManager,
@@ -44,7 +47,12 @@ export class SkillsTreeProvider implements vscode.TreeDataProvider<SkillTreeNode
     private readonly showOnboarding: boolean = false,
     private readonly activityTracker?: AgentActivityTracker
   ) {
-    activityTracker?.onDidChange(() => this._onDidChangeTreeData.fire());
+    this._activityDisposable = activityTracker?.onDidChange(() => this._onDidChangeTreeData.fire());
+  }
+
+  dispose(): void {
+    this._activityDisposable?.dispose();
+    this._onDidChangeTreeData.dispose();
   }
 
   /** Update recommended skills from workspace scan. Always triggers a tree refresh. */

@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ### Changed
 
-- VS Code debug preLaunch task and `.vscode/tasks.json` use **Bun** (`bun run compile:watch`) instead of npm, matching project scripts and `bun.lock`.
+- Uses **Bun** scripts (e.g., `bun run compile:watch`) for the pre-launch/compile workflow, matching project scripts and `bun.lock`.
 - Extension renamed from **AI Agent Superpowers** (`agent-superpowers`) to **Copilot Superpowers** (`copilot-superpowers`).
 - Auto-patches the workspace `.gitignore` with `.agent/skills/` and `.agent/skills-catalog.md` the first time a skill is installed — keeping installed skills local and untracked.
 

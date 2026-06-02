@@ -331,7 +331,7 @@ bun run compile        # one-off build
 bun run compile:watch  # watch mode (also used by F5 preLaunchTask)
 ```
 
-Press **F5** in VS Code to launch an Extension Development Host. The workspace preLaunch task runs `bun run compile:watch` — do not use `npm install` / `npm run` for local development.
+To start the Extension Development Host, first run `bun run compile:watch` in a terminal (or optionally create a VS Code task named "compile:watch" that runs that command), then press **F5** to launch the Extension Development Host — do not use `npm install` / `npm run` for local development.
 
 ---
 

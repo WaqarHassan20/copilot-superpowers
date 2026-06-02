@@ -18,6 +18,7 @@ import { maybePushToChat } from '../chat/openInChat';
 import { patchGitignoreOnFirstInstall } from '../gitignore/patchGitignore';
 import { AgentActivityTracker } from '../activity/AgentActivityTracker';
 import { trackSkillResolveAndInstall } from '../activity/trackSkillInstall';
+import { isValidSkillId, isPathWithin } from '../security';
 
 // ─── Path helper ──────────────────────────────────────────────────────────────
 
@@ -81,6 +82,21 @@ async function installSingleSkill(
     skillFiles: Map<string, string>,
     content: string
   ): Promise<{ success: boolean; message?: string } | undefined> => {
+    if (!isValidSkillId(skill.id)) {
+      return { success: false, message: 'invalid skill id' };
+    }
+
+    const skillDir = path.dirname(destPath);
+    for (const relPath of skillFiles.keys()) {
+      if (relPath === 'SKILL.md') {
+        continue;
+      }
+      const resolvedPath = path.join(skillDir, relPath);
+      if (!isPathWithin(skillDir, resolvedPath)) {
+        return { success: false, message: 'invalid companion path' };
+      }
+    }
+
     const opts: InstallOptions = {
       skillId: skill.id,
       skillContent: content,

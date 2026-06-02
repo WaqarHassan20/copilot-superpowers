@@ -109,6 +109,16 @@ export class RequestSkillTool implements vscode.LanguageModelTool<RequestSkillIn
           ),
         ]);
       }
+
+      const isInstalledNow = this.manager.isInstalled(skillId);
+      if (!isInstalledNow) {
+        log(`RequestSkillTool: install check failed for "${skillId}" after invalidating cache`);
+        return new vscode.LanguageModelToolResult([
+          new vscode.LanguageModelTextPart(
+            `Failed to install skill "${skillId}". Please install it manually via the AI Skills sidebar or run "AI Skills: Install Skill".`
+          ),
+        ]);
+      }
     } else {
       log(`RequestSkillTool: "${skillId}" already installed, loading content`);
     }

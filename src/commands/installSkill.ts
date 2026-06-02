@@ -41,6 +41,13 @@ export function registerInstallCommand(
     const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
 
     const runInstall = async () => {
+      if (!workspaceRoot) {
+        return {
+          success: false,
+          message: 'No workspace folder is open. Open a project folder first, then install skills.',
+        };
+      }
+
       if (!activityTracker) {
         const skillFiles = await manager.readSkillDirectory(skill);
         const content = skillFiles.get('SKILL.md') ?? (await manager.readContent(skill));
@@ -64,6 +71,13 @@ export function registerInstallCommand(
         manager,
         skill,
         async (skillFiles, content) => {
+          if (!workspaceRoot) {
+            return {
+              success: false,
+              message:
+                'No workspace folder is open. Open a project folder first, then install skills.',
+            };
+          }
           const opts: InstallOptions = {
             skillId: resolvedId!,
             skillContent: content,

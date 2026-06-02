@@ -128,8 +128,7 @@ async function handleSkillSelection(
   }
 
   const runInstall = async (skillFiles: Map<string, string>, content: string) => {
-    await installSkillLocally(skill.id, content, skillFiles, workspaceRoot);
-    return { success: true };
+    return await installSkillLocally(skill.id, content, skillFiles, workspaceRoot);
   };
 
   if (activityTracker) {
@@ -150,7 +149,10 @@ async function handleSkillSelection(
       vscode.window.showWarningMessage(`Skill '${skillId}' has no readable content.`);
       return;
     }
-    await installSkillLocally(skill.id, content, skillFiles, workspaceRoot);
+    const outcome = await installSkillLocally(skill.id, content, skillFiles, workspaceRoot);
+    if (!outcome.success) {
+      return;
+    }
   }
 
   await openSkillsInChat([skill.id]);
@@ -161,10 +163,10 @@ async function installSkillLocally(
   content: string,
   skillFiles: Map<string, string>,
   workspaceRoot: string
-): Promise<void> {
+): Promise<{ success: boolean; message?: string }> {
   const skillInstallDir = path.join(workspaceRoot, '.agent', 'skills', skillId);
   if (fs.existsSync(path.join(skillInstallDir, 'SKILL.md'))) {
-    return;
+    return { success: true };
   }
   const opts: InstallOptions = {
     skillId,
@@ -173,9 +175,11 @@ async function installSkillLocally(
     workspaceRoot,
   };
   try {
-    await new ProjectLocalInstaller().install(opts);
-  } catch {
-    // Non-fatal — still proceed to attach context
+    const result = await new ProjectLocalInstaller().install(opts);
+    return { success: result.success, message: result.message };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return { success: false, message };
   }
 }
 

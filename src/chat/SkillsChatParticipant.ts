@@ -4,6 +4,7 @@ import { FuzzySearch } from '../skills/FuzzySearch';
 import { log } from '../logger';
 import { AgentActivityTracker } from '../activity/AgentActivityTracker';
 import { trackSkillResolveAndLoad } from '../activity/trackSkillInstall';
+import { isValidSkillId } from '../security';
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -60,63 +61,65 @@ function normaliseQuery(raw: string): string {
 
 // ── Request handler ────────────────────────────────────────────────────────
 
-async function handleRequest(
+function handleHelp(response: vscode.ChatResponseStream): vscode.ChatResult {
+  response.markdown(HELP_TEXT);
+  return {};
+}
+
+function handleList(
+  manager: SkillsManager,
+  response: vscode.ChatResponseStream
+): vscode.ChatResult {
+  const installedIds = manager.getInstalledIds();
+  if (installedIds.size === 0) {
+    response.markdown(
+      'No skills are installed in this workspace yet. Use the sidebar or `Ctrl+Shift+/` to install some.'
+    );
+    return {};
+  }
+  const lines = [...installedIds].sort().map((id) => `- \`${id}\``);
+  response.markdown(`**Installed skills (${installedIds.size}):**\n\n${lines.join('\n')}`);
+  return {};
+}
+
+function handleSearch(
+  manager: SkillsManager,
+  raw: string,
+  response: vscode.ChatResponseStream
+): vscode.ChatResult {
+  const query = raw.slice(7).trim();
+  if (!query) {
+    response.markdown('Please provide a search term, e.g. `@aiSkills search react`.');
+    return {};
+  }
+  const fuzzy = new FuzzySearch(manager.getAll());
+  const results = fuzzy.search(query).slice(0, 10);
+  if (results.length === 0) {
+    response.markdown(`No skills found for **${query}**.`);
+    return {};
+  }
+  const installedIds = manager.getInstalledIds();
+  const lines = results.map((s) => {
+    const badge = installedIds.has(s.id) ? ' ✓' : '';
+    return `- \`${s.id}\`${badge} — ${s.description}`;
+  });
+  response.markdown(`**Skills matching "${query}":**\n\n${lines.join('\n')}`);
+  return {};
+}
+
+async function handleActivate(
   manager: SkillsManager,
   activityTracker: AgentActivityTracker | undefined,
-  request: vscode.ChatRequest,
-  _context: vscode.ChatContext,
-  response: vscode.ChatResponseStream,
-  token: vscode.CancellationToken
+  skillId: string,
+  response: vscode.ChatResponseStream
 ): Promise<vscode.ChatResult> {
-  const raw = request.prompt.trim();
-
-  if (!raw || raw === 'help' || raw === '?') {
-    response.markdown(HELP_TEXT);
+  if (!isValidSkillId(skillId)) {
+    response.markdown(
+      `Skill **\`${skillId}\`** is not a valid skill identifier.\n\n` +
+        `Try \`@aiSkills search ${skillId}\` to find similar skills.`
+    );
     return {};
   }
-
-  // ── list command ──────────────────────────────────────────────────────────
-  if (raw.toLowerCase() === 'list') {
-    const installedIds = manager.getInstalledIds();
-    if (installedIds.size === 0) {
-      response.markdown(
-        'No skills are installed in this workspace yet. Use the sidebar or `Ctrl+Shift+/` to install some.'
-      );
-      return {};
-    }
-    const lines = [...installedIds].sort().map((id) => `- \`${id}\``);
-    response.markdown(`**Installed skills (${installedIds.size}):**\n\n${lines.join('\n')}`);
-    return {};
-  }
-
-  // ── search command ────────────────────────────────────────────────────────
-  if (raw.toLowerCase().startsWith('search ')) {
-    const query = raw.slice(7).trim();
-    if (!query) {
-      response.markdown('Please provide a search term, e.g. `@aiSkills search react`.');
-      return {};
-    }
-    const fuzzy = new FuzzySearch(manager.getAll());
-    const results = fuzzy.search(query).slice(0, 10);
-    if (results.length === 0) {
-      response.markdown(`No skills found for **${query}**.`);
-      return {};
-    }
-    const installedIds = manager.getInstalledIds();
-    const lines = results.map((s) => {
-      const badge = installedIds.has(s.id) ? ' ✓' : '';
-      return `- \`${s.id}\`${badge} — ${s.description}`;
-    });
-    response.markdown(`**Skills matching "${query}":**\n\n${lines.join('\n')}`);
-    return {};
-  }
-
-  // ── skill activation ──────────────────────────────────────────────────────
-  if (token.isCancellationRequested) {
-    return {};
-  }
-
-  const skillId = normaliseQuery(raw);
 
   // Try exact match first, then fuzzy fallback
   let skill = manager.findById(skillId);
@@ -165,6 +168,36 @@ async function handleRequest(
 
   log(`SkillsChatParticipant: delivered "${skill.id}" (${skillFiles.size} file(s))`);
   return { metadata: { skillId: skill.id } };
+}
+
+async function handleRequest(
+  manager: SkillsManager,
+  activityTracker: AgentActivityTracker | undefined,
+  request: vscode.ChatRequest,
+  _context: vscode.ChatContext,
+  response: vscode.ChatResponseStream,
+  token: vscode.CancellationToken
+): Promise<vscode.ChatResult> {
+  const raw = request.prompt.trim();
+
+  if (!raw || raw === 'help' || raw === '?') {
+    return handleHelp(response);
+  }
+
+  if (raw.toLowerCase() === 'list') {
+    return handleList(manager, response);
+  }
+
+  if (raw.toLowerCase().startsWith('search ')) {
+    return handleSearch(manager, raw, response);
+  }
+
+  if (token.isCancellationRequested) {
+    return {};
+  }
+
+  const skillId = normaliseQuery(raw);
+  return handleActivate(manager, activityTracker, skillId, response);
 }
 
 // ── Follow-up provider ─────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { SkillsManager } from '../skills/SkillsManager';
 import { SkillEntry } from '../skills/types';
-import { isValidSkillId } from '../security';
+import { isValidSkillId, isPathWithin } from '../security';
 import { SkillUpdateTracker } from '../skills/SkillUpdateTracker';
 import { ProjectLocalInstaller } from '../installers/projectLocalInstaller';
 import { AgentActivityTracker } from '../activity/AgentActivityTracker';
@@ -221,7 +221,22 @@ export async function installSkill(
       skillFiles: Map<string, string>,
       content: string
     ): Promise<{ success: boolean; message?: string } | undefined> => {
+      if (!isValidSkillId(skill.id)) {
+        return { success: false, message: 'invalid skill id' };
+      }
+
       const skillDir = path.dirname(destPath);
+      // Validate all paths first
+      for (const relPath of skillFiles.keys()) {
+        if (relPath === 'SKILL.md') {
+          continue;
+        }
+        const companionDest = path.join(skillDir, relPath);
+        if (!isPathWithin(skillDir, companionDest)) {
+          return { success: false, message: 'invalid companion path' };
+        }
+      }
+
       fs.mkdirSync(skillDir, { recursive: true });
       fs.writeFileSync(destPath, content, 'utf-8');
 
@@ -259,8 +274,14 @@ export async function installSkill(
       };
     }
 
-    const skillFiles = await manager.readSkillDirectory(skill);
-    const content = skillFiles.get('SKILL.md');
+    let skillFiles = await manager.readSkillDirectory(skill);
+    let content = skillFiles.get('SKILL.md');
+    if (!content) {
+      content = (await manager.readContent(skill)) ?? undefined;
+      if (content) {
+        skillFiles = new Map([['SKILL.md', content]]);
+      }
+    }
     if (!content) {
       return { skillId: skill.id, success: false, message: 'Failed to read skill content' };
     }
