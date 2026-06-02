@@ -69,6 +69,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const welcomed = context.globalState.get<boolean>('aiSkills.welcomed', false);
 
   const treeProvider = new SkillsTreeProvider(manager, favoriteSkills, userCollections, !welcomed);
+  setupSkillsFileWatcher(context, treeProvider);
   const treeView = vscode.window.createTreeView('aiSkillsTree', {
     treeDataProvider: treeProvider,
     showCollapseAll: true,
@@ -253,3 +254,27 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 }
 
 export function deactivate(): void {}
+
+function setupSkillsFileWatcher(
+  context: vscode.ExtensionContext,
+  treeProvider: SkillsTreeProvider
+): void {
+  const watcher = vscode.workspace.createFileSystemWatcher('**/.agent/skills/**');
+
+  watcher.onDidCreate(() => {
+    log('Watcher: detected skill creation, refreshing...');
+    treeProvider.refreshAfterInstall();
+  });
+
+  watcher.onDidChange(() => {
+    log('Watcher: detected skill modification, refreshing...');
+    treeProvider.refreshAfterInstall();
+  });
+
+  watcher.onDidDelete(() => {
+    log('Watcher: detected skill deletion, refreshing...');
+    treeProvider.refreshAfterInstall();
+  });
+
+  context.subscriptions.push(watcher);
+}

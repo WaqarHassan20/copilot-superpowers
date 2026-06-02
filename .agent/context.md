@@ -6,6 +6,15 @@ Running log of decisions, discoveries, and session context for the **AI Agent Su
 
 ## Session Log
 
+### 2026-06-02 (Skills Tree Auto-Refresh File System Watcher)
+
+**Status:** Completed.
+
+**What was changed:**
+
+- **`src/extension.ts`** — Implemented `setupSkillsFileWatcher` to watch the project-local `.agent/skills/` directory for any file system events (creation, modification, deletion). Pushed to extension subscriptions for leak protection.
+- **`CHANGELOG.md`** — Documented the automatic sidebar tree view refresh fix under the `[Unreleased]` section.
+
 ### 2026-03-11 (README & documentation — editor-only focus)
 
 **Status:** Complete.

@@ -13,6 +13,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - Extension renamed from **AI Agent Superpowers** (`agent-superpowers`) to **Copilot Superpowers** (`copilot-superpowers`).
 - Auto-patches the workspace `.gitignore` with `.agent/skills/` and `.agent/skills-catalog.md` the first time a skill is installed — keeping installed skills local and untracked.
 
+### Fixed
+
+- Added a workspace file watcher for the local `.agent/skills/` directory to automatically refresh the Skills tree view when skills are added, modified, or deleted without requiring manual refreshes.
+
 ---
 
 ## [1.0.0] - 2026-03-10
