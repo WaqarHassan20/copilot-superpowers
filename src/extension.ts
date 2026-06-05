@@ -293,7 +293,7 @@ function setupSkillsFileWatcher(
     }, 300);
   };
 
-  watcher.onDidCreate(() => {
+  const onCreate = watcher.onDidCreate(() => {
     log('Watcher: detected skill creation, refreshing...');
     try {
       refreshAfterInstallDebounced();
@@ -302,7 +302,7 @@ function setupSkillsFileWatcher(
     }
   });
 
-  watcher.onDidChange(() => {
+  const onChange = watcher.onDidChange(() => {
     log('Watcher: detected skill modification, refreshing...');
     try {
       refreshAfterInstallDebounced();
@@ -311,7 +311,7 @@ function setupSkillsFileWatcher(
     }
   });
 
-  watcher.onDidDelete(() => {
+  const onDelete = watcher.onDidDelete(() => {
     log('Watcher: detected skill deletion, refreshing...');
     try {
       refreshAfterInstallDebounced();
@@ -320,5 +320,5 @@ function setupSkillsFileWatcher(
     }
   });
 
-  context.subscriptions.push(watcher);
+  context.subscriptions.push(watcher, onCreate, onChange, onDelete);
 }
