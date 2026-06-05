@@ -42,7 +42,7 @@ import { registerBatchInstallTool } from './tools/batchInstallTool';
 import { registerPlanInstallTool } from './tools/planInstallTool';
 import { ERR_BUNDLE_INCOMPLETE, CMD_FILTER_TREE, CTX_UPDATES_AVAILABLE } from './constants';
 import { WorkspaceScanner } from './skills/WorkspaceScanner';
-import { initLogger, log } from './logger';
+import { initLogger, log, logError } from './logger';
 import { RecentSkills } from './recentSkills';
 import { FavoriteSkills } from './favoriteSkills';
 import { UserCollections } from './skills/UserCollections';
@@ -259,21 +259,54 @@ function setupSkillsFileWatcher(
   context: vscode.ExtensionContext,
   treeProvider: SkillsTreeProvider
 ): void {
-  const watcher = vscode.workspace.createFileSystemWatcher('**/.agent/skills/**');
+  const firstFolder = vscode.workspace.workspaceFolders?.[0];
+  if (!firstFolder) {
+    return;
+  }
+
+  const pattern = new vscode.RelativePattern(firstFolder, '.agent/skills/**');
+  const watcher = vscode.workspace.createFileSystemWatcher(pattern);
+
+  let debounceTimer: NodeJS.Timeout | undefined;
+
+  const refreshAfterInstallDebounced = (): void => {
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+    }
+    debounceTimer = setTimeout(() => {
+      try {
+        treeProvider.refreshAfterInstall();
+      } catch (err) {
+        logError('Watcher: failed to refresh after install', err);
+      }
+    }, 300);
+  };
 
   watcher.onDidCreate(() => {
     log('Watcher: detected skill creation, refreshing...');
-    treeProvider.refreshAfterInstall();
+    try {
+      refreshAfterInstallDebounced();
+    } catch (err) {
+      logError('Watcher: failed to refresh after install', err);
+    }
   });
 
   watcher.onDidChange(() => {
     log('Watcher: detected skill modification, refreshing...');
-    treeProvider.refreshAfterInstall();
+    try {
+      refreshAfterInstallDebounced();
+    } catch (err) {
+      logError('Watcher: failed to refresh after install', err);
+    }
   });
 
   watcher.onDidDelete(() => {
     log('Watcher: detected skill deletion, refreshing...');
-    treeProvider.refreshAfterInstall();
+    try {
+      refreshAfterInstallDebounced();
+    } catch (err) {
+      logError('Watcher: failed to refresh after install', err);
+    }
   });
 
   context.subscriptions.push(watcher);
