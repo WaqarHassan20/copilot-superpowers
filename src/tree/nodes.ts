@@ -133,11 +133,13 @@ export class ActivitySectionDividerItem extends vscode.TreeItem {
   }
 }
 
+let gapIdSeq = 0;
 export class ActivitySectionGapItem extends vscode.TreeItem {
   readonly contextValue = 'activityGap';
 
   constructor() {
     super('\u00A0', vscode.TreeItemCollapsibleState.None);
+    this.id = `activity-gap-${++gapIdSeq}`;
     this.tooltip = '';
   }
 }
@@ -147,17 +149,20 @@ export class LiveAgentActivitySectionItem extends vscode.TreeItem {
 
   constructor(isActive: boolean) {
     super('Live Agent Activity', vscode.TreeItemCollapsibleState.Expanded);
+    this.id = 'liveAgentActivity';
     this.description = isActive ? 'active' : 'idle';
     this.tooltip = 'Real-time status of skill resolve and install operations';
     this.iconPath = new vscode.ThemeIcon('pulse');
   }
 }
 
+let stepsGapIdSeq = 0;
 export class ActivityStepsGapItem extends vscode.TreeItem {
   readonly contextValue = 'activityStepsGap';
 
   constructor() {
     super('\u00A0', vscode.TreeItemCollapsibleState.None);
+    this.id = `activity-steps-gap-${++stepsGapIdSeq}`;
     this.tooltip = '';
   }
 }
@@ -190,6 +195,7 @@ export class AgentActivityItem extends vscode.TreeItem {
 
   constructor(entry: ActivityEntry) {
     super(entry.label, vscode.TreeItemCollapsibleState.None);
+    this.id = entry.id;
     this.description = entry.statusText || undefined;
     this.iconPath = activityIcon(entry.state);
   }

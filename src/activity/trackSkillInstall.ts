@@ -53,7 +53,7 @@ export async function trackSkillResolveAndInstall(
     content: string
   ) => Promise<SkillInstallOutcome | undefined>
 ): Promise<SkillInstallOutcome | undefined> {
-  tracker.beginSkillOperation(skillId);
+  tracker.beginSkillOperation(skillId, true);
   try {
     await yieldToUi();
 
@@ -87,7 +87,7 @@ export async function trackSkillResolveAndLoad(
   manager: SkillsManager,
   skill: SkillEntry
 ): Promise<Map<string, string>> {
-  tracker.beginSkillOperation(skillId);
+  tracker.beginSkillOperation(skillId, false);
   try {
     await yieldToUi();
 
