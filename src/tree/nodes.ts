@@ -133,13 +133,14 @@ export class ActivitySectionDividerItem extends vscode.TreeItem {
   }
 }
 
-let gapIdSeq = 0;
 export class ActivitySectionGapItem extends vscode.TreeItem {
   readonly contextValue = 'activityGap';
 
-  constructor() {
+  constructor(index?: number) {
     super('\u00A0', vscode.TreeItemCollapsibleState.None);
-    this.id = `activity-gap-${++gapIdSeq}`;
+    if (index !== undefined) {
+      this.id = `activity-gap-${index}`;
+    }
     this.tooltip = '';
   }
 }
@@ -156,13 +157,12 @@ export class LiveAgentActivitySectionItem extends vscode.TreeItem {
   }
 }
 
-let stepsGapIdSeq = 0;
 export class ActivityStepsGapItem extends vscode.TreeItem {
   readonly contextValue = 'activityStepsGap';
 
   constructor() {
     super('\u00A0', vscode.TreeItemCollapsibleState.None);
-    this.id = `activity-steps-gap-${++stepsGapIdSeq}`;
+    this.id = 'activity-steps-gap';
     this.tooltip = '';
   }
 }

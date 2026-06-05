@@ -304,11 +304,11 @@ export class SkillsTreeProvider
 
     const activityBlock: SkillTreeNode[] = this.activityTracker
       ? [
-          new ActivitySectionGapItem(),
-          new ActivitySectionGapItem(),
-          new ActivitySectionGapItem(),
-          new ActivitySectionGapItem(),
-          new ActivitySectionGapItem(),
+          new ActivitySectionGapItem(1),
+          new ActivitySectionGapItem(2),
+          new ActivitySectionGapItem(3),
+          new ActivitySectionGapItem(4),
+          new ActivitySectionGapItem(5),
           new LiveAgentActivitySectionItem(this.activityTracker.hasActiveOperation()),
         ]
       : [];

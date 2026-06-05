@@ -270,13 +270,7 @@ function setupSkillsFileWatcher(
   context: vscode.ExtensionContext,
   treeProvider: SkillsTreeProvider
 ): void {
-  const firstFolder = vscode.workspace.workspaceFolders?.[0];
-  if (!firstFolder) {
-    return;
-  }
-
-  const pattern = new vscode.RelativePattern(firstFolder, '.agent/skills/**');
-  const watcher = vscode.workspace.createFileSystemWatcher(pattern);
+  const watcher = vscode.workspace.createFileSystemWatcher('**/.agent/skills/**');
 
   let debounceTimer: NodeJS.Timeout | undefined;
 

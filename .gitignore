@@ -13,3 +13,7 @@ npm-debug.log*
 .agent/skills-catalog.md
 .agent/skills/
 .env
+
+# VS Code (ignore user settings but track launch.json configurations)
+.vscode/*
+!.vscode/launch.json
