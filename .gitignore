@@ -12,6 +12,3 @@ npm-debug.log*
 .agent/skills-catalog.md
 .agent/skills/
 .env
-
-# IDE Metadata
-.marscode/

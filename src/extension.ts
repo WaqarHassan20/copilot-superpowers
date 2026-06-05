@@ -48,6 +48,7 @@ import { FavoriteSkills } from './favoriteSkills';
 import { UserCollections } from './skills/UserCollections';
 import { SkillUpdateTracker } from './skills/SkillUpdateTracker';
 import { registerSkillsChatParticipant } from './chat/SkillsChatParticipant';
+import { AgentActivityTracker } from './activity/AgentActivityTracker';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   initLogger(context);
@@ -66,9 +67,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const favoriteSkills = new FavoriteSkills(context);
   const userCollections = new UserCollections(context);
   const tracker = new SkillUpdateTracker(context);
+  const activityTracker = new AgentActivityTracker();
   const welcomed = context.globalState.get<boolean>('aiSkills.welcomed', false);
 
-  const treeProvider = new SkillsTreeProvider(manager, favoriteSkills, userCollections, !welcomed);
+  const treeProvider = new SkillsTreeProvider(
+    manager,
+    favoriteSkills,
+    userCollections,
+    !welcomed,
+    activityTracker
+  );
   setupSkillsFileWatcher(context, treeProvider);
   const treeView = vscode.window.createTreeView('aiSkillsTree', {
     treeDataProvider: treeProvider,
@@ -102,7 +110,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             `${recommended.length} recommended skills`,
             manager,
             tracker,
-            context
+            context,
+            activityTracker
           );
           treeProvider.refreshAfterInstall();
         } else if (choice === 'Pick Skills') {
@@ -155,18 +164,20 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   })();
 
   context.subscriptions.push(
+    activityTracker,
+    treeProvider,
     treeView,
-    registerBrowseCommand(manager, recentSkills, favoriteSkills),
-    registerInstallCommand(manager, recentSkills, tracker, context),
+    registerBrowseCommand(manager, recentSkills, favoriteSkills, activityTracker),
+    registerInstallCommand(manager, recentSkills, tracker, context, activityTracker),
     registerInstallFromTreeCommand(manager),
     registerPreviewCommand(manager),
     registerCopyIdCommand(),
     registerUninstallCommand(manager),
     registerUninstallAllCommand(manager, treeProvider),
     registerBulkCopySkillsCommand(manager),
-    registerInstallCategoryCommand(manager),
-    registerInstallAllCommand(manager, treeProvider),
-    registerInstallCollectionCommand(manager),
+    registerInstallCategoryCommand(manager, tracker, context, activityTracker),
+    registerInstallAllCommand(manager, treeProvider, tracker, context, activityTracker),
+    registerInstallCollectionCommand(manager, tracker, context, activityTracker),
     registerUninstallCategoryCommand(manager, treeProvider),
     registerUninstallCollectionCommand(manager, treeProvider),
     registerToggleFavoriteCommand(favoriteSkills, treeProvider),
@@ -182,14 +193,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     registerRemoveFromCollectionCommand(userCollections, treeProvider),
     registerUpdateAllSkillsCommand(manager, tracker, treeProvider),
     registerRefreshCatalogCommand(manager),
-    registerRequestSkillTool(manager),
+    registerRequestSkillTool(manager, activityTracker),
     registerListInstalledTool(manager),
     registerSearchSkillsTool(manager),
     registerGetSkillInfoTool(manager),
     registerCheckUpdatesTool(manager, tracker),
-    registerBatchInstallTool(manager, tracker),
+    registerBatchInstallTool(manager, tracker, activityTracker),
     registerPlanInstallTool(manager, tracker),
-    registerSkillsChatParticipant(manager),
+    registerSkillsChatParticipant(manager, activityTracker),
     vscode.commands.registerCommand('aiSkills.refreshTree', async () => {
       await vscode.window.withProgress(
         {
